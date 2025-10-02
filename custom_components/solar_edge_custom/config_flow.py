@@ -15,7 +15,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util import slugify
 
-from .const import CONF_SITE_ID, DEFAULT_NAME, DOMAIN
+from .const import CONF_SITE_ID, DEFAULT_NAME, DOMAIN, LOGGER
 
 
 class SolarEdgeConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -45,14 +45,49 @@ class SolarEdgeConfigFlow(ConfigFlow, domain=DOMAIN):
         session = async_get_clientsession(self.hass)
         api = SolarEdge(api_key, session)
         try:
+            LOGGER.debug(
+                "Attempting to validate SolarEdge credentials for site %s", site_id
+            )
             response = await api.get_details(site_id)
-            if response["details"]["status"].lower() != "active":
+            LOGGER.debug(
+                "SolarEdge get_details response for site %s: %s", site_id, response
+            )
+
+            details = response.get("details")
+            if details is None:
+                LOGGER.error(
+                    "No 'details' found in SolarEdge response for site %s: %s",
+                    site_id,
+                    response,
+                )
+                self._errors[CONF_SITE_ID] = "invalid_api_key"
+                return False
+
+            status = details.get("status")
+            if status is None:
+                LOGGER.error(
+                    "No 'status' found in SolarEdge details for site %s: %s",
+                    site_id,
+                    details,
+                )
+                self._errors[CONF_SITE_ID] = "invalid_api_key"
+                return False
+
+            if status.lower() != "active":
                 self._errors[CONF_SITE_ID] = "site_not_active"
                 return False
         except (TimeoutError, ClientError, socket.gaierror):
+            LOGGER.exception(
+                "Error communicating with SolarEdge API while validating site %s",
+                site_id,
+            )
             self._errors[CONF_SITE_ID] = "could_not_connect"
             return False
         except KeyError:
+            LOGGER.exception(
+                "Unexpected payload received from SolarEdge while validating site %s",
+                site_id,
+            )
             self._errors[CONF_SITE_ID] = "invalid_api_key"
             return False
         return True

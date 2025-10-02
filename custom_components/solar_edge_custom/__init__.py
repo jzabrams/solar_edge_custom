@@ -23,18 +23,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: SolarEdgeConfigEntry) ->
     session = async_get_clientsession(hass)
     api = SolarEdge(entry.data[CONF_API_KEY], session)
 
+    site_id = entry.data[CONF_SITE_ID]
+
+    LOGGER.debug("Validating SolarEdge API access for site %s", site_id)
+
     try:
-        response = await api.get_details(entry.data[CONF_SITE_ID])
+        response = await api.get_details(site_id)
     except (TimeoutError, ClientError, socket.gaierror) as ex:
-        LOGGER.error("Could not retrieve details from SolarEdge API")
+        LOGGER.exception(
+            "Could not retrieve details from SolarEdge API for site %s", site_id
+        )
         raise ConfigEntryNotReady from ex
 
+    LOGGER.debug(
+        "SolarEdge details response for site %s received: %s", site_id, response
+    )
+
     if "details" not in response:
-        LOGGER.error("Missing details data in SolarEdge response")
+        LOGGER.error(
+            "Missing 'details' key in SolarEdge response for site %s: %s",
+            site_id,
+            response,
+        )
         raise ConfigEntryNotReady
 
-    if response["details"].get("status", "").lower() != "active":
-        LOGGER.error("SolarEdge site is not active")
+    status = response["details"].get("status")
+    if status is None:
+        LOGGER.error(
+            "Missing 'status' in SolarEdge details response for site %s: %s",
+            site_id,
+            response["details"],
+        )
+        raise ConfigEntryNotReady
+
+    if status.lower() != "active":
+        LOGGER.error(
+            "SolarEdge site %s is not active (status: %s)", site_id, status
+        )
         return False
 
     entry.runtime_data = SolarEdgeData(api_client=api)
