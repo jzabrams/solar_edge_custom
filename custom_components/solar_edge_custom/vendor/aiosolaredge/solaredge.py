@@ -57,15 +57,15 @@ class SolarEdge:
         sites = data.get("sites", {}).get("site", [])
         if not sites:
             raise ValueError("No sites returned from API")
-    
+
         if site_id:
             for site in sites:
                 if str(site.get("id")) == str(site_id):
-                    return site
+                    return {"details": site}
             raise ValueError(f"Site ID {site_id} not found in /sites/list response")
-    
+
         # Default to the first site if no ID provided
-        return sites[0]
+        return {"details": sites[0]}
 
     async def get_overview(self, site_id: int | str) -> dict[str, Any]:
         """
