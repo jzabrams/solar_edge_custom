@@ -1,0 +1,20 @@
+{
+  "domain": "solar_edge_custom",
+  "name": "SolarEdge Custom",
+  "codeowners": ["@frenck", "@bdraco"],
+  "config_flow": true,
+  "dhcp": [
+    {
+      "hostname": "target",
+      "macaddress": "002702*"
+    }
+  ],
+  "documentation": "https://www.home-assistant.io/integrations/solaredge",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "loggers": [
+    "custom_components.solar_edge_custom",
+    "custom_components.solar_edge_custom.vendor.aiosolaredge"
+  ],
+  "requirements": ["stringcase==1.2.0"]
+}
