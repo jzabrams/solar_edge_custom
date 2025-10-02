@@ -1,7 +1,7 @@
 {
   "domain": "solar_edge_custom",
   "name": "SolarEdge Custom",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "codeowners": ["@frenck", "@bdraco", "@jzabrams"],
   "config_flow": true,
   "dhcp": [
